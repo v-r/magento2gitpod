@@ -20,26 +20,7 @@ RUN mkdir -p /etc/bash_completion.d/cargo
 RUN apt install -y php-dev
 RUN apt install -y php-pear
 RUN apt-get -y install dialog
-
-#Install php-fpm7.2
-#RUN apt-get update \
-#    && apt-get install -y nginx curl zip unzip git software-properties-common supervisor sqlite3 \
-#    && add-apt-repository -y ppa:ondrej/php \
-#    && apt-get update \
-#    && apt-get install -y php7.2-fpm php7.2-common php7.2-cli php7.2-imagick php7.2-gd php7.2-mysql \
-#       php7.2-pgsql php7.2-imap php-memcached php7.2-mbstring php7.2-xml php7.2-xmlrpc php7.2-soap php7.2-zip php7.2-curl \
-#       php7.2-bcmath php7.2-sqlite3 php7.2-apcu php7.2-apcu-bc php7.2-intl php-xdebug php-redis \
-#    && php -r "readfile('http://getcomposer.org/installer');" | php -- --install-dir=/usr/bin/ --filename=composer \
-#    && mkdir /run/php \
-#    && chown gitpod:gitpod /run/php \
-#    && chown -R gitpod:gitpod /etc/php \
-#    && apt-get remove -y --purge software-properties-common \
-#    && apt-get -y autoremove \
-#    && apt-get clean \
-#    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-#    && echo "daemon off;" >> /etc/nginx/nginx.conf
-    
-    
+        
 #Install php-fpm7.4
 RUN apt-get update \
     && apt-get install -y curl zip unzip git software-properties-common supervisor sqlite3 \

@@ -1,6 +1,6 @@
 FROM gitpod/workspace-full
 
-USER gitpod
+USER root
 
 RUN apt-get update
 RUN apt-get -y install lsb-release

@@ -63,49 +63,7 @@ RUN chown -R gitpod:gitpod /etc/php
 USER gitpod
 COPY nginx.conf /etc/nginx
 
-#Selenium required for MFTF
-RUN wget -c https://selenium-release.storage.googleapis.com/3.141/selenium-server-standalone-3.141.59.jar
-RUN wget -c https://chromedriver.storage.googleapis.com/80.0.3987.16/chromedriver_linux64.zip
-RUN unzip chromedriver_linux64.zip
-
 USER root
-
-# Install Chrome and Chromium
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install \
-    && apt-get install -yq \
-       gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 \
-       libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 \
-       libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 \
-       libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates \
-       fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget
-
-ENV BLACKFIRE_LOG_LEVEL 1
-ENV BLACKFIRE_LOG_FILE /var/log/blackfire/blackfire.log
-ENV BLACKFIRE_SOCKET unix:///tmp/agent.sock
-ENV BLACKFIRE_SOURCEDIR /etc/blackfire
-ENV BLACKFIRE_USER gitpod
-
-RUN curl -sS https://packagecloud.io/gpg.key | sudo apt-key add \
-    && curl -sS https://packages.blackfire.io/gpg.key | sudo apt-key add \
-    && echo "deb http://packages.blackfire.io/debian any main" | tee /etc/apt/sources.list.d/blackfire.list \
-    && apt-get update \
-    && apt-get install -y blackfire-agent \
-    && apt-get install -y blackfire-php
-
-RUN \
-    version=$(php -r "echo PHP_MAJOR_VERSION, PHP_MINOR_VERSION;") \
-    && curl -A "Docker" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/${version} \
-    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \
-    && mv /tmp/blackfire-*.so $(php -r "echo ini_get('extension_dir');")/blackfire.so
-
-COPY blackfire-agent.ini /etc/blackfire/agent
-COPY blackfire-php.ini /etc/php/7.3/fpm/conf.d/92-blackfire-config.ini
-COPY blackfire-php.ini /etc/php/7.3/cli/conf.d/92-blackfire-config.ini
-
-COPY blackfire-run.sh /blackfire-run.sh
-
-ENTRYPOINT ["/bin/bash", "/blackfire-run.sh"]
 
 #Install Tideways
 RUN apt-get update
@@ -147,43 +105,11 @@ RUN echo "priority=25" > /etc/php/7.3/cli/conf.d/25-apcu_bc.ini
 RUN echo "extension=apcu.so" >> /etc/php/7.3/cli/conf.d/25-apcu_bc.ini
 RUN echo "extension=apc.so" >> /etc/php/7.3/cli/conf.d/25-apcu_bc.ini
 
-RUN chown -R gitpod:gitpod /var/log/blackfire
-RUN chown -R gitpod:gitpod /etc/init.d/blackfire-agent
-RUN mkdir -p /var/run/blackfire
-RUN chown -R gitpod:gitpod /var/run/blackfire
-RUN chown -R gitpod:gitpod /etc/blackfire
 RUN chown -R gitpod:gitpod /etc/php
 RUN chown -R gitpod:gitpod /etc/nginx
 RUN chown -R gitpod:gitpod /etc/init.d/
 RUN echo "net.core.somaxconn=65536" >> /etc/sysctl.conf
 
-#New Relic
-RUN \
-  curl -L https://download.newrelic.com/php_agent/release/newrelic-php5-9.17.1.301-linux.tar.gz | tar -C /tmp -zx && \
-  export NR_INSTALL_USE_CP_NOT_LN=1 && \
-  export NR_INSTALL_SILENT=1 && \
-  /tmp/newrelic-php5-*/newrelic-install install && \
-  rm -rf /tmp/newrelic-php5-* /tmp/nrinstall* && \
-  touch /etc/php/7.3/fpm/conf.d/newrelic.ini && \
-  touch /etc/php/7.3/cli/conf.d/newrelic.ini && \
-  sed -i \
-      -e 's/"REPLACE_WITH_REAL_KEY"/"ba052d5cdafbbce81ed22048d8a004dd285aNRAL"/' \
-      -e 's/newrelic.appname = "PHP Application"/newrelic.appname = "magento2gitpod"/' \
-      -e 's/;newrelic.daemon.app_connect_timeout =.*/newrelic.daemon.app_connect_timeout=15s/' \
-      -e 's/;newrelic.daemon.start_timeout =.*/newrelic.daemon.start_timeout=5s/' \
-      /etc/php/7.3/cli/conf.d/newrelic.ini && \
-  sed -i \
-      -e 's/"REPLACE_WITH_REAL_KEY"/"ba052d5cdafbbce81ed22048d8a004dd285aNRAL"/' \
-      -e 's/newrelic.appname = "PHP Application"/newrelic.appname = "magento2gitpod"/' \
-      -e 's/;newrelic.daemon.app_connect_timeout =.*/newrelic.daemon.app_connect_timeout=15s/' \
-      -e 's/;newrelic.daemon.start_timeout =.*/newrelic.daemon.start_timeout=5s/' \
-      /etc/php/7.3/fpm/conf.d/newrelic.ini && \
-  sed -i 's|/var/log/newrelic/|/tmp/|g' /etc/php/7.3/fpm/conf.d/newrelic.ini && \
-  sed -i 's|/var/log/newrelic/|/tmp/|g' /etc/php/7.3/cli/conf.d/newrelic.ini
-     
-RUN chown -R gitpod:gitpod /etc/php
-RUN chown -R gitpod:gitpod /etc/newrelic
-COPY newrelic.cfg /etc/newrelic
 RUN rm -f /usr/bin/php
 RUN ln -s /usr/bin/php7.4 /usr/bin/php
 

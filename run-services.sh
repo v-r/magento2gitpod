@@ -2,4 +2,5 @@
 
 service nginx start &
 /usr/sbin/php-fpm7.4 --fpm-config php-fpm.conf &
-sudo supervisord &
+redis-server &
+supervisord &

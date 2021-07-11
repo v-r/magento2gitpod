@@ -1,4 +1,4 @@
-FROM gitpod/workspace-full
+FROM gitpod/workspace-mysql
 
 USER root
 
@@ -20,25 +20,6 @@ RUN mkdir -p /etc/bash_completion.d/cargo
 RUN apt install -y php-dev
 RUN apt install -y php-pear
 RUN apt-get -y install dialog
-
-#Install php-fpm7.2
-#RUN apt-get update \
-#    && apt-get install -y nginx curl zip unzip git software-properties-common supervisor sqlite3 \
-#    && add-apt-repository -y ppa:ondrej/php \
-#    && apt-get update \
-#    && apt-get install -y php7.2-fpm php7.2-common php7.2-cli php7.2-imagick php7.2-gd php7.2-mysql \
-#       php7.2-pgsql php7.2-imap php-memcached php7.2-mbstring php7.2-xml php7.2-xmlrpc php7.2-soap php7.2-zip php7.2-curl \
-#       php7.2-bcmath php7.2-sqlite3 php7.2-apcu php7.2-apcu-bc php7.2-intl php-xdebug php-redis \
-#    && php -r "readfile('http://getcomposer.org/installer');" | php -- --install-dir=/usr/bin/ --filename=composer \
-#    && mkdir /run/php \
-#    && chown gitpod:gitpod /run/php \
-#    && chown -R gitpod:gitpod /etc/php \
-#    && apt-get remove -y --purge software-properties-common \
-#    && apt-get -y autoremove \
-#    && apt-get clean \
-#    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-#    && echo "daemon off;" >> /etc/nginx/nginx.conf
-    
     
 #Install php-fpm7.4
 RUN apt-get update \
@@ -71,45 +52,6 @@ RUN echo "xdebug.remote_enable=on" >> /etc/php/7.4/mods-available/xdebug.ini
     #&& echo "xdebug.show_exception_trace=On" >> /etc/php/7.4/mods-available/xdebug.ini
 RUN mv /etc/php/7.4/cli/conf.d/20-xdebug.ini /etc/php/7.4/cli/conf.d/20-xdebug.ini-bak
 RUN mv /etc/php/7.4/fpm/conf.d/20-xdebug.ini /etc/php/7.4/fpm/conf.d/20-xdebug.ini-bak
-
-# Install MySQL
-ENV PERCONA_MAJOR 5.7
-RUN apt-get update \
- && apt-get -y install gnupg2 \
- && apt-get clean && rm -rf /var/cache/apt/* /var/lib/apt/lists/* /tmp/* \
- && mkdir /var/run/mysqld \
- && wget -c https://repo.percona.com/apt/percona-release_latest.stretch_all.deb \
- && dpkg -i percona-release_latest.stretch_all.deb \
- && apt-get update
-
-RUN set -ex; \
-	{ \
-		for key in \
-			percona-server-server/root_password \
-			percona-server-server/root_password_again \
-			"percona-server-server-$PERCONA_MAJOR/root-pass" \
-			"percona-server-server-$PERCONA_MAJOR/re-root-pass" \
-		; do \
-			echo "percona-server-server-$PERCONA_MAJOR" "$key" password 'nem4540'; \
-		done; \
-	} | debconf-set-selections; \
-	apt-get update; \
-	apt-get install -y \
-		percona-server-server-5.7 percona-server-client-5.7 percona-server-common-5.7 \
-	;
-	
-RUN chown -R gitpod:gitpod /etc/mysql /var/run/mysqld /var/log/mysql /var/lib/mysql /var/lib/mysql-files /var/lib/mysql-keyring
-
-# Install our own MySQL config
-COPY mysql.cnf /etc/mysql/conf.d/mysqld.cnf
-COPY .my.cnf /home/gitpod
-COPY mysql.conf /etc/supervisor/conf.d/mysql.conf
-RUN chown gitpod:gitpod /home/gitpod/.my.cnf
-
-USER gitpod
-
-# Install default-login for MySQL clients
-COPY client.cnf /etc/mysql/conf.d/client.cnf
 
 USER root
 
